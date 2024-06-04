@@ -24,45 +24,77 @@ impl Png {
 
     /// Creates a `Png` from a list of chunks using the correct header
     pub fn from_chunks(chunks: Vec<Chunk>) -> Self {
-        todo!()
+        Png { chunks }
     }
 
     /// Creates a `Png` from a file path
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
-        todo!()
+        let mut file = fs::File::open(path)?;
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)?;
+
+        match Png::try_from(buffer.as_slice()) {
+            Ok(png) => Ok(png),
+            Err(_) => Err(anyhow::anyhow!("Invalid PNG file")),
+        }
     }
 
     /// Appends a chunk to the end of this `Png` file's `Chunk` list.
     pub fn append_chunk(&mut self, chunk: Chunk) {
-        todo!()
+        self.chunks.push(chunk);
     }
 
     /// Searches for a `Chunk` with the specified `chunk_type` and removes the first
     /// matching `Chunk` from this `Png` list of chunks.
     pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
-        todo!()
+
+        for (index, chunk) in self.chunks().iter().enumerate() {
+            
+            let curr = chunk.chunk_type().to_string();
+
+            if chunk_type == curr {
+                return Ok(self.chunks.remove(index));
+            }
+        }
+
+        Err(anyhow::anyhow!("Chunk not found"))
     }
 
     /// The header of this PNG.
     pub fn header(&self) -> &[u8; 8] {
-        todo!()
+        &Png::STANDARD_HEADER
     }
 
     /// Lists the `Chunk`s stored in this `Png`
     pub fn chunks(&self) -> &[Chunk] {
-        todo!()
+        &self.chunks
     }
 
     /// Searches for a `Chunk` with the specified `chunk_type` and returns the first
     /// matching `Chunk` from this `Png`.
     pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
-        todo!()
+        for chunk in self.chunks().iter() {
+            
+            let curr = chunk.chunk_type().to_string();
+
+            if chunk_type == curr {
+                return Some(chunk);
+            }
+        }
+        None
     }
 
     /// Returns this `Png` as a byte sequence.
     /// These bytes will contain the header followed by the bytes of all of the chunks.
     pub fn as_bytes(&self) -> Vec<u8> {
-        todo!()
+        let mut bytes = Vec::new();
+        bytes.extend(Png::STANDARD_HEADER.iter());
+
+        for chunk in self.chunks().iter() {
+            bytes.extend(chunk.as_bytes().iter());
+        }
+
+        bytes
     }
 }
 
@@ -83,10 +115,9 @@ impl TryFrom<&[u8]> for Png {
 
         let mut chunks = Vec::new();
 
-        while let Ok(chunk) = Chunk::try_from(reader.buffer()) {
+        while let Ok(chunk) = Chunk::consume_chunk(&mut reader) {
             chunks.push(chunk);
         }
-
         Ok(Png::from_chunks(chunks))
     }
 }
@@ -215,7 +246,6 @@ mod tests {
         let chunk = png.chunk_by_type("FrSt").unwrap();
         assert_eq!(&chunk.chunk_type().to_string(), "FrSt");
         assert_eq!(&chunk.data_as_string().unwrap(), "I am the first chunk");
-
     }
 
     #[test]

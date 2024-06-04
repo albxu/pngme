@@ -78,13 +78,8 @@ impl Chunk {
         bytes.extend(self.crc.to_be_bytes().iter());
         bytes
     }
-}
 
-impl TryFrom<&[u8]> for Chunk {
-    type Error = Error;
-
-    fn try_from(bytes: &[u8]) -> Result<Self> {
-        let mut reader = BufReader::new(bytes);
+    pub fn consume_chunk<R: ?Sized + Read>(reader: &mut BufReader<R>)-> Result<Chunk> {
         let mut buffer = [0; 4];
 
         reader.read_exact(buffer.as_mut())?; // supposed a u32
@@ -114,6 +109,24 @@ impl TryFrom<&[u8]> for Chunk {
                 crc: given_crc
             })
         }
+
+    }
+}
+
+
+
+impl TryFrom<&[u8]> for Chunk {
+    type Error = Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self> {
+
+        if bytes.is_empty() {
+            return Err(Error::msg("Empty chunk"));
+        }
+
+        let mut reader = BufReader::new(bytes);
+
+        Chunk::consume_chunk(&mut reader)
     }
 }
 
