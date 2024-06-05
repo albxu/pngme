@@ -5,11 +5,9 @@ use std::fmt;
 use std::fs;
 use std::io::{BufReader, Read};
 use std::path::Path;
-use std::str::FromStr;
 
-use anyhow::{Result};
 use crate::chunk::Chunk;
-use crate::chunk_type::ChunkType;
+use anyhow::Result;
 
 /// A PNG container as described by the PNG spec
 /// http://www.libpng.org/pub/png/spec/1.2/PNG-Contents.html
@@ -47,9 +45,7 @@ impl Png {
     /// Searches for a `Chunk` with the specified `chunk_type` and removes the first
     /// matching `Chunk` from this `Png` list of chunks.
     pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
-
         for (index, chunk) in self.chunks().iter().enumerate() {
-            
             let curr = chunk.chunk_type().to_string();
 
             if chunk_type == curr {
@@ -74,7 +70,6 @@ impl Png {
     /// matching `Chunk` from this `Png`.
     pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         for chunk in self.chunks().iter() {
-            
             let curr = chunk.chunk_type().to_string();
 
             if chunk_type == curr {
@@ -107,8 +102,10 @@ impl TryFrom<&[u8]> for Png {
         let mut header = [0; 8];
 
         match reader.read_exact(&mut header) {
-            Ok(_) => if header != Png::STANDARD_HEADER {
-                return Err("Invalid PNG header");
+            Ok(_) => {
+                if header != Png::STANDARD_HEADER {
+                    return Err("Invalid PNG header");
+                }
             }
             Err(_) => return Err("Invalid PNG header"),
         }
@@ -118,6 +115,7 @@ impl TryFrom<&[u8]> for Png {
         while let Ok(chunk) = Chunk::consume_chunk(&mut reader) {
             chunks.push(chunk);
         }
+
         Ok(Png::from_chunks(chunks))
     }
 }
@@ -133,18 +131,17 @@ impl fmt::Display for Png {
             writeln!(f, "  }}")?;
         }
         writeln!(f, "]",)?;
-        Ok(()) 
+        Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::chunk_type::ChunkType;
     use crate::chunk::Chunk;
-    use std::str::FromStr;
+    use crate::chunk_type::ChunkType;
     use std::convert::TryFrom;
+    use std::str::FromStr;
 
     fn testing_chunks() -> Vec<Chunk> {
         vec![
@@ -231,7 +228,6 @@ mod tests {
 
         assert!(png.is_err());
     }
-
 
     #[test]
     fn test_list_chunks() {
@@ -544,5 +540,4 @@ mod tests {
         202, 28, 31, 66, 176, 235, 16, 0, 0, 0, 3, 82, 117, 83, 116, 104, 101, 121, 158, 176, 245,
         160, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
     ];
-
 }

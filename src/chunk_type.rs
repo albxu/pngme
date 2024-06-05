@@ -74,15 +74,8 @@ impl FromStr for ChunkType {
         if s.chars().any(|c| !c.is_ascii_alphabetic()) {
             Err("ChunkType string must be ASCII alphabetic")
         } else {
-            let bytes = s.as_bytes();   
-            Ok(
-                ChunkType::new(
-                    bytes[0],
-                    bytes[1],
-                    bytes[2],
-                    bytes[3]
-                )
-            )
+            let bytes = s.as_bytes();
+            Ok(ChunkType::new(bytes[0], bytes[1], bytes[2], bytes[3]))
         }
     }
 }

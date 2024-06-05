@@ -1,26 +1,31 @@
 #![allow(dead_code)]
+use crate::chunk_type::ChunkType;
+use anyhow::{Error, Result};
 use std::convert::TryFrom;
 use std::fmt;
 use std::io::{BufReader, Read};
-use crate::chunk_type::ChunkType;
-use anyhow::{Error, Result};
 const CRC: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
 /// A validated PNG chunk. See the PNG Spec for more details
 /// http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html
 #[derive(Debug, Clone)]
 pub struct Chunk {
     length: u32,
-    chunk_type: ChunkType, 
+    chunk_type: ChunkType,
     data: Vec<u8>,
-    crc: u32
+    crc: u32,
 }
 
 impl Chunk {
     fn compute_crc(chunk_type: ChunkType, data: &[u8]) -> u32 {
         // assuming we did this right
-        let bytes = chunk_type.bytes().iter().chain(data.iter()).copied().collect::<Vec<u8>>();
+        let bytes = chunk_type
+            .bytes()
+            .iter()
+            .chain(data.iter())
+            .copied()
+            .collect::<Vec<u8>>();
         // let bytes = data.iter().copied().chain(chunk_type.bytes().iter().cloned()).collect::<Vec<u8>>();
-        
+
         CRC.checksum(&bytes)
     }
 
@@ -31,7 +36,7 @@ impl Chunk {
             length,
             chunk_type,
             data,
-            crc
+            crc,
         }
     }
     /// The length of the data portion of this chunk.
@@ -59,7 +64,7 @@ impl Chunk {
     pub fn data_as_string(&self) -> Result<String> {
         match String::from_utf8(self.data.clone()) {
             Ok(s) => Ok(s),
-            Err(e) => Err(Error::msg(e)) // we use anyhow here so we need to do this weird thing
+            Err(e) => Err(Error::msg(e)), // we use anyhow here so we need to do this weird thing
         }
     }
 
@@ -79,16 +84,16 @@ impl Chunk {
         bytes
     }
 
-    pub fn consume_chunk<R: ?Sized + Read>(reader: &mut BufReader<R>)-> Result<Chunk> {
+    pub fn consume_chunk<R: ?Sized + Read>(reader: &mut BufReader<R>) -> Result<Chunk> {
         let mut buffer = [0; 4];
 
         reader.read_exact(buffer.as_mut())?; // supposed a u32
         let length = u32::from_be_bytes(buffer);
-        
+
         let mut buffer = [0; 4]; // this is supposed to be a "string" in ascii
         reader.read_exact(buffer.as_mut())?;
         let chunk_type = ChunkType::try_from(buffer)?;
-        
+
         let mut buffer = vec![0; length as usize];
         reader.read_exact(&mut buffer)?;
         let data = buffer;
@@ -106,20 +111,16 @@ impl Chunk {
                 length,
                 chunk_type,
                 data,
-                crc: given_crc
+                crc: given_crc,
             })
         }
-
     }
 }
-
-
 
 impl TryFrom<&[u8]> for Chunk {
     type Error = Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self> {
-
         if bytes.is_empty() {
             return Err(Error::msg("Empty chunk"));
         }
@@ -162,14 +163,16 @@ mod tests {
             .chain(crc.to_be_bytes().iter())
             .copied()
             .collect();
-        
+
         Chunk::try_from(chunk_data.as_ref()).unwrap()
     }
 
     #[test]
     fn test_new_chunk() {
         let chunk_type = ChunkType::from_str("RuSt").unwrap();
-        let data = "This is where your secret message will be!".as_bytes().to_vec();
+        let data = "This is where your secret message will be!"
+            .as_bytes()
+            .to_vec();
         let chunk = Chunk::new(chunk_type, data);
         assert_eq!(chunk.length(), 42);
         assert_eq!(chunk.crc(), 2882656334);
@@ -264,10 +267,9 @@ mod tests {
             .chain(crc.to_be_bytes().iter())
             .copied()
             .collect();
-        
+
         let chunk: Chunk = TryFrom::try_from(chunk_data.as_ref()).unwrap();
-        
+
         let _chunk_string = format!("{}", chunk);
     }
 }
-
