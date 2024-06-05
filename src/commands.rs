@@ -1,21 +1,16 @@
 use std::path::PathBuf;
-use clap::{Parser, Args, Subcommand, ValueEnum};
+use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-#[group(GROUP ATTRIBUTE)]
+#[command(version = "1.0", about = "PNG metadata manipulation tool", long_about = None)]
 pub enum PngMeArgs {
     /// Encode a message in a PNG file
-    #[command(subcommand)]
     Encode(EncodeArgs),
     /// Decode a message from a PNG file
-    #[command(subcommand)]
     Decode(DecodeArgs),
     /// Remove a chunk from a PNG file
-    #[command(subcommand)]
     Remove(RemoveArgs),
     /// Print the chunks of a PNG file
-    #[command(subcommand)]
     Print(PrintArgs),
 }
 
@@ -23,7 +18,7 @@ pub enum PngMeArgs {
 pub struct EncodeArgs{
     /// The path to the input PNG file
     #[arg(short, long)]
-    file_path: String,
+    file_path: PathBuf,
     /// The type of chunk to encode the message in
     #[arg(short, long)]
     chunk_type: String,
@@ -32,14 +27,14 @@ pub struct EncodeArgs{
     message: String,
     /// The path to the output PNG file
     #[arg(short, long)]
-    output_file: Option<String>,
+    output_file: Option<PathBuf>,
 }
 
 #[derive(Parser, Debug)]
 pub struct DecodeArgs {
     /// The path to the input PNG file
     #[arg(short, long)]
-    file_path: String,
+    file_path: PathBuf,
     /// The path to the output file
     #[arg(short, long)]
     chunk_type: String,
@@ -49,7 +44,7 @@ pub struct DecodeArgs {
 pub struct RemoveArgs {
     /// The path to the input PNG file
     #[arg(short, long)]
-    file_path: String,
+    file_path: PathBuf,
     /// The type of chunk to encode the message in
     #[arg(short, long)]
     chunk_type: String,
@@ -59,5 +54,5 @@ pub struct RemoveArgs {
 pub struct PrintArgs {
     /// The path to the input PNG file
     #[arg(short, long)]
-    file_path: String,
+    file_path: PathBuf,
 }
